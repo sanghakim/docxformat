@@ -12,6 +12,7 @@ from io import BytesIO
 from docx.document import Document as DocumentT
 from docx.shared import RGBColor
 
+from checkers.hanja_converter import to_hangul
 from checkers.symbol_checker import normalize_symbols
 from checkers.typo_checker import Engine, correct_paragraphs
 
@@ -43,10 +44,10 @@ def _diff_ops(before: str, after: str) -> list[tuple[str, str]]:
     return ops
 
 
-def revise_typos(doc: DocumentT, engine: Engine) -> list[ParagraphDiff]:
-    """본문 + 표 셀 단락에 오타 교정 + 부호 변환을 적용."""
-    targets: list = []  # (paragraph, original_text)
-
+def revise_typos(doc: DocumentT, engine: Engine,
+                 *, convert_hanja: bool = True) -> list[ParagraphDiff]:
+    """본문 + 표 셀 단락에 부호 변환 → 한자 변환 → 오타 교정 순으로 적용."""
+    targets: list = []
     for para in doc.paragraphs:
         targets.append(para)
     for table in doc.tables:
@@ -56,17 +57,17 @@ def revise_typos(doc: DocumentT, engine: Engine) -> list[ParagraphDiff]:
                     targets.append(para)
 
     originals = [p.text for p in targets]
-    # 1) 부호 정규화
-    normalized = []
-    for t in originals:
-        new_t, _ = normalize_symbols(t)
-        normalized.append(new_t)
 
-    # 2) 오타 교정
-    corrected = correct_paragraphs(normalized, engine=engine)
+    # 1) 부호 정규화
+    stage = [normalize_symbols(t)[0] for t in originals]
+    # 2) 한자 → 한글
+    if convert_hanja:
+        stage = [to_hangul(t)[0] for t in stage]
+    # 3) 오타 교정
+    stage = correct_paragraphs(stage, engine=engine)
 
     diffs: list[ParagraphDiff] = []
-    for idx, (para, before, after) in enumerate(zip(targets, originals, corrected)):
+    for idx, (para, before, after) in enumerate(zip(targets, originals, stage)):
         if before == after:
             continue
         diffs.append(ParagraphDiff(idx, before, after, _diff_ops(before, after)))

@@ -11,6 +11,8 @@
 - 표: 0.5pt 테두리, 1행 하단·1열 우측만 1.5pt 굵은선, 표 안 12pt
 - 본문 끝 `- 이 상 -` 우측 정렬, 머리글 쪽번호 `- (별첨) 1/1 -`
 - 부호 변환: `＋→+`, `∼/～→~`, `・/•→·`
+- 한자는 가능한 한 한글로 변환 (예: `年→년`, `月→월`, `社→사`)
+- 들여쓰기는 공백 문자(스페이스)로 표현 (paragraph indent 미사용)
 
 자세한 규칙은 `format_spec.py` 참고.
 
@@ -36,6 +38,7 @@ classifier.py             # 단락 종류 판별
 checkers/
   format_checker.py       # 여백/폰트/표 테두리 등 검사·수정
   symbol_checker.py       # 부호 정규화
-  typo_checker.py         # 오타 검사 (claude / hanspell)
+  hanja_converter.py      # 한자 → 한글
+  typo_checker.py         # 오타 검사 (claude / rules)
 reviser.py                # 단락 diff 생성, 파란색 마킹, 트랙체인지 HTML
 ```

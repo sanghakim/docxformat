@@ -19,10 +19,10 @@ with st.sidebar:
     st.header("설정")
     engine = st.radio(
         "오타 검사 엔진",
-        options=["claude", "hanspell"],
+        options=["claude", "rules"],
         format_func=lambda x: {
             "claude": "Claude API (정확도↑, ANTHROPIC_API_KEY 필요)",
-            "hanspell": "hanspell (로컬, 빠름)",
+            "rules": "규칙 엔진 (오프라인, 흔한 오탈자·공백 보정)",
         }[x],
     )
     do_format = st.checkbox("표준 포맷 적용", value=True)
