@@ -18,8 +18,9 @@ class ParagraphRule:
 
 
 # 단락 종류별 규칙. bold/underline은 title 계열만 강제.
+# 별첨1, 별첨2 ... 은 각각 개별 문서로 간주하므로 제목줄(title/attach_title)은 동일 규칙.
 RULES: dict[str, ParagraphRule] = {
-    "title":       ParagraphRule("title",       20, 0,  bold=True, underline=True, align="center"),
+    "title":       ParagraphRule("title",       20, 9,  bold=True, underline=True, align="center"),
     "date":        ParagraphRule("date",        13, 9,  align="right"),
     "section":     ParagraphRule("section",     16, 24),
     "sentence":    ParagraphRule("sentence",    14, 16, left_indent_chars=0),  # "□ 문장"
@@ -32,7 +33,7 @@ RULES: dict[str, ParagraphRule] = {
     "table_cell":  ParagraphRule("table_cell",  12, 0),
     "end_mark":    ParagraphRule("end_mark",    14, 0,  align="right"),
     "attachment":  ParagraphRule("attachment",  14, 0),
-    "attach_title":ParagraphRule("attach_title",20, 20, bold=True, underline=True, align="center"),
+    "attach_title":ParagraphRule("attach_title",20, 9,  bold=True, underline=True, align="center"),
     "page_number": ParagraphRule("page_number", 13, 0,  align="center"),
 }
 
