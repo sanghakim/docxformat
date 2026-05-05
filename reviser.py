@@ -14,7 +14,7 @@ from docx.shared import RGBColor
 
 from checkers.hanja_converter import to_hangul
 from checkers.symbol_checker import normalize_symbols
-from checkers.typo_checker import Engine, correct_paragraphs
+from checkers.typo_checker import Engine, OpenAIConfig, correct_paragraphs
 
 
 BLUE = RGBColor(0x00, 0x00, 0xFF)
@@ -44,8 +44,13 @@ def _diff_ops(before: str, after: str) -> list[tuple[str, str]]:
     return ops
 
 
-def revise_typos(doc: DocumentT, engine: Engine,
-                 *, convert_hanja: bool = True) -> list[ParagraphDiff]:
+def revise_typos(
+    doc: DocumentT,
+    engine: Engine,
+    *,
+    convert_hanja: bool = True,
+    openai_config: OpenAIConfig | None = None,
+) -> list[ParagraphDiff]:
     """본문 + 표 셀 단락에 부호 변환 → 한자 변환 → 오타 교정 순으로 적용."""
     targets: list = []
     for para in doc.paragraphs:
@@ -64,7 +69,7 @@ def revise_typos(doc: DocumentT, engine: Engine,
     if convert_hanja:
         stage = [to_hangul(t)[0] for t in stage]
     # 3) 오타 교정
-    stage = correct_paragraphs(stage, engine=engine)
+    stage = correct_paragraphs(stage, engine=engine, openai_config=openai_config)
 
     diffs: list[ParagraphDiff] = []
     for idx, (para, before, after) in enumerate(zip(targets, originals, stage)):
