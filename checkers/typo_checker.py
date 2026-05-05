@@ -1,12 +1,18 @@
-"""오타 검사. 엔진 선택: 'claude' (AI) 또는 'rules' (정규식)."""
+"""오타 검사. 엔진 선택: 'claude' (Claude API), 'openai' (OpenAI 호환 API), 'rules' (정규식)."""
 from __future__ import annotations
 
 import json
 import os
 import re
-from typing import Literal
+from typing import Literal, TypedDict
 
-Engine = Literal["claude", "rules"]
+Engine = Literal["claude", "openai", "rules"]
+
+
+class OpenAIConfig(TypedDict):
+    base_url: str
+    api_key: str
+    model: str
 
 
 SYSTEM_PROMPT = (
@@ -86,9 +92,49 @@ def _check_with_claude(paragraphs: list[str]) -> list[str]:
     return out
 
 
-def correct_paragraphs(paragraphs: list[str], engine: Engine = "claude") -> list[str]:
+def _check_with_openai(paragraphs: list[str], config: OpenAIConfig) -> list[str]:
+    from openai import OpenAI
+
+    client = OpenAI(
+        base_url=config["base_url"],
+        api_key=config["api_key"],
+    )
+    payload = [{"index": i, "text": t} for i, t in enumerate(paragraphs) if t.strip()]
+    if not payload:
+        return list(paragraphs)
+
+    response = client.chat.completions.create(
+        model=config["model"],
+        max_tokens=8192,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": json.dumps(payload, ensure_ascii=False)},
+        ],
+    )
+    raw = response.choices[0].message.content or ""
+    start, end = raw.find("{"), raw.rfind("}")
+    data = json.loads(raw[start : end + 1])
+
+    out = list(paragraphs)
+    for item in data.get("items", []):
+        idx = item["index"]
+        if 0 <= idx < len(out):
+            out[idx] = item["corrected"]
+    return out
+
+
+def correct_paragraphs(
+    paragraphs: list[str],
+    engine: Engine = "claude",
+    *,
+    openai_config: OpenAIConfig | None = None,
+) -> list[str]:
     if engine == "claude":
         return _check_with_claude(paragraphs)
+    if engine == "openai":
+        if not openai_config:
+            raise ValueError("engine='openai' 사용 시 openai_config 가 필요합니다.")
+        return _check_with_openai(paragraphs, openai_config)
     if engine == "rules":
         return _check_with_rules(paragraphs)
     raise ValueError(f"unknown engine: {engine}")
